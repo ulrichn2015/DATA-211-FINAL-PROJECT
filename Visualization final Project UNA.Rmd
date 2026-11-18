@@ -1,0 +1,411 @@
+---
+title: " Visualization Final Project"
+author: "Ulrich Nguelefack"
+date: "2026-11-9"
+output:
+  word_document: default
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(readxl)
+library(ggplot2)
+#install.packages("dplyr")
+library(dplyr)
+library(knitr)
+library(gridExtra)
+library(rmarkdown)
+```
+
+
+## let us make a scatter plot 
+```{r}
+Final_Project_Data<-read_excel("C:/Users/jx4634yi/Downloads/DATA 211 Final Project Data collections.xlsx")
+
+Final_Project_Data
+
+ggplot(Final_Project_Data, aes(x=Footsteps,y=`Calories_Burned(clas)`))+
+  geom_point(color="red",size=3)+
+  geom_smooth(method="lm", se=FALSE, color="green")+
+  xlim(0,8000)+
+  ylim(0,3500)+
+  labs(
+    title="Relationship Between Footsteps and Calories Burned",x="my daily footstep",
+    y="my dialy calories burned")+
+  theme_minimal()
+
+
+
+```
+
+
+```{r}
+
+data <- read_excel("C:/Users/jx4634yi/Downloads/DATA 211 Final Project Data collections.xlsx")
+
+# let us Rename columns
+names(data)[1:4] <- c("Date", "Day", "Footsteps", "Calories_Burned")
+
+# Converting  date into a good format
+data$Date <- as.Date(
+  gsub("_", " ", data$Date),
+  format = "%B %d"
+)
+
+# using set up year of 2026 
+data$Date <- as.Date(
+  paste0("2026-", format(data$Date, "%m-%d"))
+)
+
+# variable for analysis
+data <- data %>%
+  select(Date, Day, Footsteps, Calories_Burned)
+
+head(data)
+
+```
+# scatter plot 
+```{r}
+ggplot(data, aes(x = Footsteps, y = Calories_Burned)) +
+  geom_point(color = "blue", size = 3) +
+  geom_smooth(method = "lm", se = FALSE, color = "red") +
+  labs(
+    title = "Relationship Between Daily Footsteps and Calories Burned",
+    x = "Daily Footsteps (steps)",
+    y = "Daily Calories Burned (calories)"
+  ) +
+  xlim(0,8000)+
+  ylim(0,3500)+
+  theme_minimal()
+```
+
+# LIne Graph of daily footstep 
+```{r}
+ggplot(data, aes(x = Date, y = Footsteps)) +
+  geom_line(color = "blue", linewidth = 1) +
+  geom_point(color = "red", size = 2) +
+  labs(
+    title = "Daily Footsteps Over Time",
+    x = "Date",
+    y = "Daily Footsteps (steps)"
+  ) +
+  ylim(0,8000)+
+  theme_minimal()
+
+
+
+```
+
+
+# Daily footstep and calories burned 
+```{r}
+# Scale factor for displaying both variables
+scale_factor <- max(data$Footsteps, na.rm = TRUE) /
+                max(data$Calories_Burned, na.rm = TRUE)
+
+ggplot(data, aes(x = Date)) +
+  # Daily footsteps (blue line)
+  geom_line(aes(y = Footsteps, color = "Footsteps"),
+            linewidth = 1) +
+  geom_point(aes(y = Footsteps, color = "Footsteps"),
+             size = 2) +
+
+  # Daily calories burned (red line)
+  geom_line(aes(y = Calories_Burned * scale_factor,
+                color = "Calories Burned"),
+            linewidth = 1) +
+  geom_point(aes(y = Calories_Burned * scale_factor,
+                 color = "Calories Burned"),
+             size = 2) +
+
+  scale_y_continuous(
+    name = "Daily Footsteps (steps)",
+    limits = c(0, 8000),
+    sec.axis = sec_axis(
+      ~ . / scale_factor,
+      name = "Daily Calories Burned (calories)"
+    )
+  ) +
+
+  scale_color_manual(
+    values = c("Footsteps" = "blue",
+               "Calories Burned" = "red")
+  ) +
+
+  labs(
+    title = "Daily Footsteps and Calories Burned Over Time",
+    x = "Date",
+    color = "Variable"
+  ) +
+
+  theme_minimal()
+```
+
+
+
+
+# Historigram of dialy footsteps
+```{r}
+ggplot(data, aes(x = Footsteps)) +
+  geom_histogram(
+    binwidth = 1000,
+    fill = "skyblue",
+    color = "black"
+  ) +
+  labs(
+    title = "Distribution of Daily Footsteps",
+    x = "Daily Footsteps (steps)",
+    y = "Frequency (days)"
+  ) +
+  xlim(0,8000)+
+  theme_minimal()
+```
+
+
+# historigram of dialy footstep and calories burned 
+```{r}
+# Histogram for daily footsteps
+p1 <- ggplot(data, aes(x = Footsteps)) +
+  geom_histogram(
+    binwidth = 1000,
+    fill = "blue",
+    color = "black"
+  ) +
+  labs(
+    title = "Daily Footsteps",
+    x = "Footsteps (steps)",
+    y = "Frequency"
+  ) +
+  scale_x_continuous(limits = c(0, 8000)) +
+  theme_minimal()
+
+# Histogram for daily calories burned
+p2 <- ggplot(data, aes(x = Calories_Burned)) +
+  geom_histogram(
+    binwidth = 200,
+    fill = "red",
+    color = "black"
+  ) +
+  labs(
+    title = "Daily Calories Burned",
+    x = "Calories Burned (calories)",
+    y = "Frequency"
+  ) +
+  scale_x_continuous(limits = c(0, 3500)) +
+  theme_minimal()
+
+# Display both histograms together
+gridExtra::grid.arrange(p1, p2, ncol = 2)
+```
+
+
+
+# combine both historigram together 
+
+```{r}
+# Combine the two variables
+hist_data <- data.frame(
+  Value = c(data$Footsteps, data$Calories_Burned),
+  Variable = rep(
+    c("Daily Footsteps", "Calories Burned"),
+    each = nrow(data)
+  )
+)
+
+# Create both histograms
+ggplot(hist_data, aes(x = Value, fill = Variable)) +
+  geom_histogram(
+    bins = 7,
+    color = "black"
+  ) +
+  facet_wrap(
+    ~ Variable,
+    scales = "free_x",
+    ncol = 2
+  ) +
+  scale_fill_manual(
+    values = c(
+      "Daily Footsteps" = "blue",
+      "Calories Burned" = "red"
+    )
+  ) +
+  labs(
+    title = "Distribution of Daily Footsteps and Calories Burned",
+    x = "Daily Value",
+    y = "Frequency"
+  ) +
+  theme_minimal() +
+  theme(legend.position = "none")
+```
+
+
+
+
+
+# boxplot of calories burned 
+```{r}
+ggplot(data, aes(x = "", y = Calories_Burned)) +
+  geom_boxplot(fill = "lightgreen", color = "black",
+               width = 0.3) +
+  coord_flip() +
+  labs(
+    title = "Distribution of Daily Calories Burned",
+    x = NULL,
+    y = "Calories Burned (calories)"
+  ) +
+  
+  theme_minimal()
+```
+# boxplot of calories burned and footsteps
+
+
+```{r}
+# Combine both variables
+box_data <- data.frame(
+  Value = c(data$Footsteps, data$Calories_Burned),
+  Variable = rep(
+    c("Daily Footsteps", "Calories Burned"),
+    each = nrow(data)
+  )
+)
+
+# Create horizontal boxplots with separate scales
+ggplot(box_data, aes(x = Value, y = Variable, fill = Variable)) +
+  geom_boxplot(
+    width = 0.4,
+    color = "black",
+    outlier.size = 3
+  ) +
+  scale_y_discrete(
+  limits = c("Calories Burned", "Daily Footsteps")
+) +
+   
+  scale_x_continuous(
+  breaks = seq(0, 8000, by = 500)
+)+
+  coord_cartesian(xlim = c(0, 8000))+
+  scale_fill_manual(
+    values = c(
+      "Daily Footsteps" = "blue",
+      "Calories Burned" = "red"
+    )
+  ) +
+  labs(
+    title = "Boxplot Distribution of Daily Footsteps and Calories Burned",
+    x = "Daily Value",
+    y = NULL
+  ) +
+  theme_minimal() +
+  theme(
+    legend.position = "none",
+    
+  )
+```
+
+# statistical analysis 
+```{r}
+# Perform simple linear regression
+model <- lm(Calories_Burned ~ Footsteps, data = data)
+
+# Get regression results
+results <- summary(model)
+
+# Create statistical results table
+stat_table <- data.frame(
+  Statistic = c(
+    "Number of observations",
+    "Regression intercept",
+    "Regression slope",
+    "Correlation coefficient (r)",
+    "R-squared (R²)",
+    "P-value",
+    "Significance level"
+  ),
+  Result = c(
+    nobs(model),
+    coef(model)[1],
+    coef(model)[2],
+    cor(data$Footsteps, data$Calories_Burned,
+        use = "complete.obs"),
+    results$r.squared,
+    results$coefficients[2, 4],
+    0.05
+  )
+)
+
+# Round results to 4 decimal places
+stat_table$Result <- round(stat_table$Result, 4)
+
+# Display table
+knitr::kable(
+  stat_table,
+  caption = "Simple Linear Regression Results"
+)
+
+```
+# equation of the line 
+
+```{r}
+# Perform simple linear regression
+model <- lm(Calories_Burned ~ Footsteps, data = data)
+
+# Get intercept and slope
+intercept <- coef(model)[1]
+slope <- coef(model)[2]
+
+# Create regression equation
+equation <- paste0(
+  "Calories Burned = ",
+  round(intercept, 2),
+  ifelse(slope >= 0, " + ", " - "),
+  abs(round(slope, 4)),
+  " * Footsteps"
+)
+
+# Display equation
+cat(equation)
+
+```
+
+# statistic summary 
+
+```{r}
+# Calculate summary statistics
+summary_table <- data.frame(
+  Statistic = c(
+    "Number_of_Observations (days)",
+    "Average_footsteps",
+    "Average_calories_burned",
+    "Range_footsteps",
+    "Range_calories_burned",
+    "SD_footsteps",
+    "SD_calories_burned"
+  ),
+
+  Result = c(
+    sum(complete.cases(data[, c("Footsteps", "Calories_Burned")])),
+    mean(data$Footsteps, na.rm = TRUE),
+    mean(data$Calories_Burned, na.rm = TRUE),
+    diff(range(data$Footsteps, na.rm = TRUE)),
+    diff(range(data$Calories_Burned, na.rm = TRUE)),
+    sd(data$Footsteps, na.rm = TRUE),
+    sd(data$Calories_Burned, na.rm = TRUE)
+  )
+)
+
+# Round results to 2 decimal places
+summary_table$Result <- round(summary_table$Result, 2)
+
+# Display summary statistics table
+knitr::kable(
+  summary_table,
+  caption = "Summary Statistics of Daily Footsteps and Calories Burned"
+)
+```
+
+
